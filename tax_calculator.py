@@ -17,15 +17,15 @@ plt.style.use('dark_background')
 
 st.set_page_config(page_icon="🏙️", page_title="Tax Savings Calculator", layout='centered')
 st.header("""**Tax Savings Calculator**""")
-st.caption("This app is primarily to see how much savings you get when you top up your CPF or SRS (planned deductibles), so you can get a sense of whether it's worth locking in the funds at your tax bracket.")
+st.caption("This app is primarily to see how much savings you get when you top up your CPF or SRS (planned new deductibles), so you can get a sense of whether it's worth locking in the funds at your tax bracket.")
 st.text("Top Up CPF (SA): $7,000, capped at current FRS \nTop up SRS: $15,300 (Singaporean) or $35,700 (foreigner)")
 st.caption("[IRAS CPF Relief](https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions/tax-reliefs/central-provident-fund-(cpf)-cash-top-up-relief) | [IRAS SRS Relief](https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/special-tax-schemes/srs-contributions)")
 
 
 
 form = st.form(key="submit-form")
-income = form.number_input("Annual Income", min_value=1000, max_value=320_000, value=50_000, step=1000)
-deductibles = form.number_input("Planned Deductibles", min_value=0, max_value=320_000, value=22300, step=100)
+income = form.number_input("Assessable Income (after all auto-included deductions)", min_value=1000, max_value=100_000_000, value=50_000, step=1000)
+deductibles = form.number_input("Planned New Deductibles", min_value=0, max_value=100_000_000, value=22300, step=100)
 calculate = form.form_submit_button("Calculate")
 
 
@@ -37,7 +37,7 @@ def getTaxPayable(income=0):
 
 
 def getTaxSavings(income, deductibles):
-    new_income = income - deductibles
+    new_income = max(income - deductibles, 0)
     old_tax = getTaxPayable(income)
     new_tax = getTaxPayable(new_income)
     return income, new_income, old_tax, new_tax
@@ -52,12 +52,14 @@ taxDict = dict(zip(tiers, tax_increments))
 print('Tax Rates:', [f'{x:.2%}' for x in np.add.accumulate(tax_increments)])
 
 
-x = np.arange(1e3, 24e4, 1e3)
-y = [getTaxPayable(i) for i in x]
+
 
 
 if calculate:
     income, new_income, old_tax, new_tax = getTaxSavings(income, deductibles)
+    
+    x = np.arange(0, income*1.5, 1e3)
+    y = [getTaxPayable(i) for i in x]
     
     fig, ax = plt.subplots( figsize=(10,8), tight_layout=True)
     plt.plot( x, y, linewidth=3, c='gold' )
@@ -76,6 +78,8 @@ if calculate:
     plt.legend()
     ax.get_xaxis().set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
     ax.get_yaxis().set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+    if income>1e6:
+        plt.title('You earn too much to be bothering about this!', weight='bold')
     plt.savefig("output_image.png", dpi=200, bbox_inches='tight', pad_inches=0.3)
     plt.show()
     
@@ -83,7 +87,7 @@ if calculate:
 
     output_text = ""
     output_text += f"\nIncome: {income:,.0f}"
-    output_text += f"\nPlanned Deductibles: {deductibles:,.0f}"
+    output_text += f"\nDeductibles: {deductibles:,.0f}"
     output_text += f"\nOld Tax: {old_tax:,.0f}"
     output_text += f"\nNew Tax: {new_tax:,.0f}"
     output_text += f"\nTax Saved: {old_tax-new_tax:,.0f}"
