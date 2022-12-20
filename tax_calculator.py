@@ -17,12 +17,15 @@ plt.style.use('dark_background')
 
 st.set_page_config(page_icon="🏙️", page_title="Tax Savings Calculator", layout='centered')
 st.header("""**Tax Savings Calculator**""")
-st.text("This app is primarily to see how much savings you get when you top up your CPF or SRS, so you can get a sense of whether it's worth locking in the funds at your tax bracket.")
-st.text("CPF Top Up (SA): $7,000, capped at current FRS \nTop up SRS account: $15,300 (Singaporean) or $35,700 (foreigner)")
+st.caption("This app is primarily to see how much savings you get when you top up your CPF or SRS (planned deductibles), so you can get a sense of whether it's worth locking in the funds at your tax bracket.")
+st.text("Top Up CPF (SA): $7,000, capped at current FRS \nTop up SRS: $15,300 (Singaporean) or $35,700 (foreigner)")
+st.caption("[IRAS CPF Relief](https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions/tax-reliefs/central-provident-fund-(cpf)-cash-top-up-relief) | [IRAS SRS Relief](https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/special-tax-schemes/srs-contributions)")
+
+
 
 form = st.form(key="submit-form")
 income = form.number_input("Annual Income", min_value=1000, max_value=320_000, value=50_000, step=1000)
-deductibles = form.number_input("Total deductibles", min_value=0, max_value=320_000, value=22300, step=100)
+deductibles = form.number_input("Planned Deductibles", min_value=0, max_value=320_000, value=22300, step=100)
 calculate = form.form_submit_button("Calculate")
 
 
@@ -37,13 +40,6 @@ def getTaxSavings(income, deductibles):
     new_income = income - deductibles
     old_tax = getTaxPayable(income)
     new_tax = getTaxPayable(new_income)
-    tax_saved = old_tax-new_tax
-    print(f'Income: {income}')
-    print(f'Deductibles: {deductibles}')
-    print(f'Old Tax: {old_tax}')
-    print(f'New Tax: {new_tax}')
-    print(f'Tax saved: {tax_saved}')
-    print(f'Delta: {tax_saved/deductibles:.04}')
     return income, new_income, old_tax, new_tax
 
 
@@ -64,15 +60,15 @@ if calculate:
     income, new_income, old_tax, new_tax = getTaxSavings(income, deductibles)
     
     fig, ax = plt.subplots( figsize=(10,8), tight_layout=True)
-    plt.plot( x, y, linewidth=3 )
+    plt.plot( x, y, linewidth=3, c='gold' )
     
     plt.scatter( income, old_tax, marker='o', c='brown', s=50, zorder=9, label=f'Old Tax [{old_tax:,.0f}]' )
-    plt.axvline(income, c='brown', linestyle=':')
-    plt.axhline(old_tax, c='brown', linestyle=':')
+    plt.axvline(income, c='brown', linestyle='--')
+    plt.axhline(old_tax, c='brown', linestyle='--')
     
-    plt.scatter( new_income, new_tax, marker='o', c='gold', s=50, zorder=9, label=f'New Tax [{new_tax:,.0f}]' )
-    plt.axvline(new_income, c='gold', linestyle=':')
-    plt.axhline(new_tax, c='gold', linestyle=':')
+    plt.scatter( new_income, new_tax, marker='o', c='springgreen', s=50, zorder=9, label=f'New Tax [{new_tax:,.0f}]' )
+    plt.axvline(new_income, c='springgreen', linestyle='-')
+    plt.axhline(new_tax, c='springgreen', linestyle='-')
     
     plt.grid(linestyle='-', color='grey', alpha=0.35)
     plt.xlabel('Taxable Income')
@@ -86,16 +82,17 @@ if calculate:
 
 
     output_text = ""
-    output_text += f"\nIncome: {income}"
-    output_text += f"\nDeductibles: {deductibles}"
-    output_text += f"\nOld Tax: {old_tax}"
-    output_text += f"\nNew Tax: {new_tax}"
-    output_text += f"\nTax Saved: {old_tax-new_tax}"
+    output_text += f"\nIncome: {income:,.0f}"
+    output_text += f"\nPlanned Deductibles: {deductibles:,.0f}"
+    output_text += f"\nOld Tax: {old_tax:,.0f}"
+    output_text += f"\nNew Tax: {new_tax:,.0f}"
+    output_text += f"\nTax Saved: {old_tax-new_tax:,.0f}"
     output_text += f"\nTax Savings Efficiency: {(old_tax-new_tax)/deductibles:.2%}"
     
     st.text(f"{output_text}")
-
+    st.caption("Efficiency = Tax Saved / Deductibles - i.e. how much you saved by increasing your deductibles")
     st.image('output_image.png', output_format='png')
+    st.caption('"Thank you for your contributions to nation-building" - IRAS')
 
 
 st.caption("Other calculators: [HDB Fair Value](https://share.streamlit.io/joelpang/hdb/main/calculator.py)")
